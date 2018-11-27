@@ -1,6 +1,11 @@
 #include "Renderer.h"
 #include "Window.h"
 #include <d3d11.h>
+#include "GameState.h"
+#include <fstream>
+#include <vector>
+
+using namespace std;
 
 D3D_FEATURE_LEVEL featureLevel[4] =
 {
@@ -26,6 +31,15 @@ D3D11_TEXTURE2D_DESC depthStencilDesc = { };
 ID3D11Texture2D* depthStencilBuffer = nullptr;
 ID3D11DepthStencilView* depthStencilView = nullptr;
 
+//Create Shaders
+ID3D11VertexShader* vertexShader = nullptr;
+ID3D11PixelShader* pixelShader = nullptr;
+vector<char> vsData;
+vector<char> psData;
+
+//Create Input Layout
+ID3D11InputLayout* inputLayout = nullptr;
+
 //Create View Port
 D3D11_VIEWPORT vp = { };
 
@@ -47,7 +61,7 @@ void InitD3D11(HWND hwnd)
 	swapChainDesc.Windowed = !Get_IsFullscreen();
 	swapChainDesc.Flags = 0;
 
-	D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, featureLevel, 4, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &device, nullptr, &context);
+	D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,0 , featureLevel, 4, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &device, nullptr, &context);
 
 	swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
 	device->CreateRenderTargetView(backBuffer, 0, &renderTargetView);
@@ -77,6 +91,33 @@ void InitD3D11(HWND hwnd)
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
 	context->RSSetViewports(1, &vp);
+}
+
+void Set_Shaders()
+{
+	ifstream vsFile("VertexShader.cso", ios::binary);
+	ifstream psFile("PixelShader.cso", ios::binary);
+
+	vsData = { istreambuf_iterator<char>(vsFile), istreambuf_iterator<char>() };
+	psData = { istreambuf_iterator<char>(psFile), istreambuf_iterator<char>() };
+
+	Get_Device()->CreateVertexShader(vsData.data(), vsData.size(), nullptr, &vertexShader);
+	Get_Device()->CreatePixelShader(psData.data(), psData.size(), nullptr, &pixelShader);
+
+	Get_Context()->VSSetShader(vertexShader, nullptr, 0);
+	Get_Context()->PSSetShader(pixelShader, nullptr, 0);
+}
+
+void Set_Input_Layout()
+{
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	Get_Device()->CreateInputLayout(layout, 2, vsData.data(), vsData.size(), &inputLayout);
+	Get_Context()->IASetInputLayout(inputLayout);
 }
 
 void CleanUp()
@@ -116,6 +157,31 @@ void CleanUp()
 	{
 		depthStencilView->Release();
 	}
+
+	if (vertexShader != NULL)
+	{
+		vertexShader->Release();
+	}
+
+	if (pixelShader != NULL)
+	{
+		pixelShader->Release();
+	}
+
+	if (inputLayout != NULL)
+	{
+		inputLayout->Release();
+	}
+
+	if (GET_cbSchlaeger1() != NULL)
+	{
+		GET_cbSchlaeger1()->Release();
+	}
+
+	if (GET_cbSchlaeger2() != NULL)
+	{
+		GET_cbSchlaeger2()->Release();
+	}
 }
 
 ID3D11Device * Get_Device()
@@ -136,4 +202,9 @@ IDXGISwapChain * Get_SwapChain()
 ID3D11RenderTargetView * Get_RenderTargetView()
 {
 	return renderTargetView;
+}
+
+ID3D11DepthStencilView * Get_DepthStencilView()
+{
+	return depthStencilView;
 }

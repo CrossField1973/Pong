@@ -5,12 +5,15 @@
 #include <windows.h>
 #include "Window.h"
 #include "Renderer.h"
-#include "SetupGame.h"
+#include "GameState.h"
+#include "Input.h"
 
 //Als Beispiel eingesetzte Werte
 bool IsFullScreen = false;
 int ClientWidth = 800;
 int ClientHeight = 600;
+
+
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
 {
@@ -18,9 +21,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 
 	InitD3D11(Get_Window_Handle());
 
-
-
 	ShowWindow(Get_Window_Handle(), nCmdShow);
+
+	InitGame();
+
+	InitDirectInput(hInstance);
 
 	// Run the message loop.
 
@@ -37,12 +42,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 			break;
 		}
 		//Where the real fun starts
-		float black[4] = { 0, 0, 0, 1, };
-		Get_Context()->ClearRenderTargetView(Get_RenderTargetView(), black);
+		float grey[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
+		Get_Context()->ClearRenderTargetView(Get_RenderTargetView(), grey);
+		Get_Context()->ClearDepthStencilView(Get_DepthStencilView(), D3D11_CLEAR_DEPTH | D3D10_CLEAR_STENCIL, 1.0f, 0);
+		DetectInput();
+		if (UpdateScene() == false)
+		{
+			break;
+		}
+
 		Get_SwapChain()->Present(0, 0);
 	}
 
+	ReleaseInput();
 	CleanUp();
 	return 0;
 }
-

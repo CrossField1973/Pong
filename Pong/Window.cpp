@@ -83,7 +83,7 @@ void Create_Window(int width, int height, bool IsFullScreen, HINSTANCE hInstance
 		0,                              // Optional window styles.
 		(LPSTR)CLASS_NAME,                     // Window class
 		(LPSTR)L"Learn to Program Windows",    // Window text
-		WS_OVERLAPPEDWINDOW,            // Window style
+		WS_OVERLAPPEDWINDOW | CS_VREDRAW | CS_HREDRAW,// Window style
 
 		// Size and position
 		CW_USEDEFAULT, CW_USEDEFAULT, width, height,
